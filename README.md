@@ -2,8 +2,8 @@
 
 ### Abstract
 
-![tree-frontier](images/tree-frontier.png)
-![x](images/x.png)
+<img src="https://github.com/ddaedalus/tres/tree/master/images/tree-frontier.png" width="50" height="50">
+<img src="https://github.com/ddaedalus/tres/tree/master/images/x.png" width="50" height="50">
 
 > A focused crawler aims at discovering as many web pages relevant to a target topic as possible, while avoiding irrelevant ones; i.e. maximizing the harvest rate. Reinforcement Learning (RL) has been utilized to optimize the crawling process, yet it deals with huge state and action spaces, which can constitute a serious challenge. In this paper, we propose Tree REinforcement Spider (\textit{TRES}), an end-to-end RL-empowered framework for focused crawling. Unlike other crawling approaches, we properly model a crawling environment as a Markov Decision Process, by representing the state as a subgraph of the Web and actions as its expansion edges. Exploiting a few initial keywords, which are related to the target topic, TRES adopts a keyword expansion strategy based on the cosine similarity of keyword word2vec embeddings. To learn a reward function, we propose a deep neural network, called \textit{KwBiLSTM}, leveraging the keywords discovered in the expansion stage. To reduce the time complexity of selecting a best action, we propose \textit{Tree-Frontier}, a two-fold decision tree, which also speeds up training by discretizing the state and action spaces. Experimentally, we show that TRES outperforms state-of-the-art methods in terms of harvest rate by at least 58\%, while it has competitive results in the domain maximization setting, i.e. the task of maximizing the number of different fetched web sites.
 

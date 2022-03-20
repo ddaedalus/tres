@@ -1,6 +1,10 @@
-## Change this taxonomy ##
+## Change this taxonomy modifying the example below ##
+## Use your domain name (e.g. Hardware) as the key of the dict
+## Use zeros for dict values as in the example below.
+
 taxonomy = {
 
+	# Example
     "Hardware": [
         # Here: Keywords
         {
@@ -28,7 +32,7 @@ taxonomy = {
 }
 
 
-## Ignore that part ##
+## Ignore this part ##
 
 from .config import *
 from utils.hyperparameters import *

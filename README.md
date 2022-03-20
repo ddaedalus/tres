@@ -48,3 +48,18 @@ python3 run_classification.py
 ```bash
 python3 run_crawling.py
 ```
+
+---
+
+## Citation
+
+If you find this work helpful in your research, cite:
+```
+@article{Kontogiannis2021TreebasedFW,
+  title={Tree-based Focused Web Crawling with Reinforcement Learning},
+  author={A. Kontogiannis and Dimitrios Kelesis and Vasilis Pollatos and Georgios Paliouras and George Giannakopoulos},
+  journal={ArXiv},
+  year={2021},
+  volume={abs/2112.07620}
+}
+```

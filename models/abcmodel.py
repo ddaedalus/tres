@@ -140,7 +140,7 @@ class KwBiLSTM(ABCModel):
         return self.best_score_fold
 
     def setPathID(self):
-        self.path = "./KwBiLSTM/"
+        self.path = "./KwBiLSTM"
         return 
 
     def score_ds(self, test_ds, report=True):
@@ -370,12 +370,12 @@ class KwBiLSTM(ABCModel):
             accs.append(acc)
         return np.mean(losses), np.mean(accs)
 
-    def save_model(self, path="model"):
+    def save_model(self):
         self.model.save(self.path)
         return
 
-    def load_model(self, path="model"):
-        self.model = load_model(self.path + path, compile=False)
+    def load_model(self):
+        self.model = load_model(self.path, compile=False)
         return
 
 

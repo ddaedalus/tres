@@ -300,29 +300,3 @@ class CrawlerSys(URLextractor, HTMLParser, TextReprGenerator):
         return prob
 
 
-import os
-import tensorflow as tf
-
-
-if __name__ == "__main__":
-    ## Just an example
-
-    keyword_filter = KeywordFilter(taxonomy_keywords=sports_taxonomy, new_keywords=new_keywords,
-                                   taxonomy_phrases=sports_phrases)
-    path_model = ""
-    clf = KwBiLSTM(path=path_model, shortcut_dim1=42, shortcut_dim2=3)
-    clf.load_model(f"model")
-    # clf = None
-    sys = CrawlerSys(keyword_filter=keyword_filter, clf=clf)
-
-    # doc = "trade routes  en wikipedia org wiki Trade route"
-    # prob = sys.classify(doc)
-    # print(prob)
-    print()
-
-    w = Webpage(url="https://web.archive.org/web/20160604111116/https://docs.google.com/viewer")
-    url = "https://stackoverflow.com/questions/60905801/parallelizing-model-predictions-in-keras-using-multiprocessing-for-python"
-    url = "https://developer.android.com/reference/java/util/concurrent/package-summary"
-    w = Webpage(url=url)
-    extracted = sys.expand(w)
-    print(extracted[0].x)

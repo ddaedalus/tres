@@ -28,7 +28,7 @@ pip install -r requirements.txt
 
 3. Download the "files" directory from [Google Drive](https://drive.google.com/drive/folders/16bQ9Xya50LX8VRIQguhvSHkLRsz2Kv3X?usp=sharing).
 
-4. Create 2 files in the "files" directory: (a) seeds.txt with the seed URLs that the crawler would start its process and (b) data.txt providing relevant URLs (around 800-1000 at most) for training KwBiLSTM.
+4. Create 2 files in the "files" directory: (a) seeds.txt with the seed URLs that the crawler would start its process and (b) data.txt providing relevant URLs (ideally around 800-1000) for training KwBiLSTM.
 
 5. Modify the ./configuration/config.py file with your preferences.
 

@@ -22,3 +22,4 @@ if __name__ == "__main__":
 
     with open(f"{path}{domain}.pickle", "wb") as fp:
         pickle.dump(d, fp)
+        

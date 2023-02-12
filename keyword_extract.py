@@ -44,11 +44,14 @@ if __name__ == "__main__":
     print(f"mean_value: {mean_value}")
 
     new_keywords = {}
-    for body in list(dd.values()):
+    words_seen = {}
+    for i,body in enumerate(list(dd.values())):
         body = body.lower()
         body = body.split()
         if body != []:
             for w in body:
+                if w in words_seen: continue
+                words_seen[w] = 1
                 if not is_new_keyword(w) or (w in new_keywords) or (w in taxonomy_keywords): continue
                 new_keywords[w] = 0
         print(new_keywords.keys())

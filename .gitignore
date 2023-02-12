@@ -2,3 +2,9 @@ KwBiLSTM/
 files/
 /odigies.txt
 crawler_venv/
+/times.pickle
+KwBiLSTM_sports/
+KwBiLSTM_hardware/
+KwBiLSTM_food/
+/times.png
+SVM/

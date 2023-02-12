@@ -2,7 +2,7 @@ from configuration.config import *
 from utils.hyperparameters import *
 from rl.crawler_env_tree import *
 from rl.agent import *
-from models.abcmodel import KwBiLSTM
+from models.abcmodel import KwBiLSTM, SVM
 from models.qnetwork import *
 from rl.replay_buffer import *
 from crawling.webpage import *
@@ -48,8 +48,12 @@ if __name__ == "__main__":
     trg = TextReprGenerator(keyword_filter=keyword_filter)
     clf = KwBiLSTM(input_dim=WORD_DIM, shortcut_dim1=SHORTCUT1, shortcut_dim2=3)
     clf.load_model()
-
-    crawler_sys = CrawlerSys(keyword_filter=keyword_filter, clf=clf)
+    if CLASSIFICATION_METHOD == "SVM":
+        svm = SVM(input_dim=WORD_DIM, shortcut_dim1=SHORTCUT1, shortcut_dim2=3)
+        svm.load_model()
+        crawler_sys = CrawlerSys(keyword_filter=keyword_filter, clf=[svm, clf])
+    else:
+        crawler_sys = CrawlerSys(keyword_filter=keyword_filter, clf=[clf])
 
     # Initialize the crawler environment
     env = TreeCrawlerEnv(seed_urls=seed_urls, crawler_sys=crawler_sys, TOTAL_TIME_STEPS=TOTAL_TIME_STEPS)
@@ -83,6 +87,8 @@ if __name__ == "__main__":
 
     batches = []
     harvest_rates = []
+    if CLASSIFICATION_METHOD == "SVM":
+        harvest_rates_rnn = []
     crawled_pages = []     
     rewards = []
     history_urls = {}       
@@ -91,7 +97,11 @@ if __name__ == "__main__":
     time_start = time.time()
     tree_leafs = []
     tree_sizes = []
+    count_adaptation = 1
+    times = []
     while(True):
+        t = 0
+        t1 = time.time()
         print()
         if VERBOSE and agent.env.crawler_sys.times_verbose % VERBOSE_PERIOD == 0:
             print(f"{UNDERLINE}Timestep: {agent.env.current_step}{ENDC}")  
@@ -106,10 +116,24 @@ if __name__ == "__main__":
             page = agent.tree_policy(policy=POLICY)
         print(f"Page fetched: {page.url}")
 
-        # Perform a step in environment
+        t2 = time.time()
+        t += t2 - t1
+
+        # Perform a step in the environment
         state_page, reward, done, _ = agent.env.step(action=page.id)
         if state_page == False:
             continue
+
+        t1 = time.time()
+
+        # Adapt MAX_DOMAIN_PAGES if needed
+        if agent.env.current_step == ADAPTATION_STEP * count_adaptation:
+            ADAPTIVE_MAX_DOMAIN_PAGES = agent.MAX_DOMAIN_PAGES // ADAPTATION_STEP_DIV
+            if ADAPTIVE_MAX_DOMAIN_PAGES < 2: ADAPTIVE_MAX_DOMAIN_PAGES = 2
+            agent.MAX_DOMAIN_PAGES = ADAPTIVE_MAX_DOMAIN_PAGES
+            agent.env.MAX_DOMAIN_PAGES = ADAPTIVE_MAX_DOMAIN_PAGES
+            agent.env.tree_frontier.MAX_DOMAIN_PAGES = ADAPTIVE_MAX_DOMAIN_PAGES
+            count_adaptation += 1
 
         if VERBOSE and agent.env.crawler_sys.times_verbose % VERBOSE_PERIOD == 0:
             print(f"{OKBLUE}Different relevant domains: {len(agent.env.different_domains)}{ENDC}")
@@ -120,6 +144,8 @@ if __name__ == "__main__":
         # Store reward and harvest rate
         rewards.append(reward)
         harvest_rates.append(agent.env.harvestRate())
+        if CLASSIFICATION_METHOD == "SVM":
+            harvest_rates_rnn.append(agent.env.rnn_relevant / agent.env.current_step)
         
         # Save crawled page
         crawled_pages.append(page.url) 
@@ -145,12 +171,17 @@ if __name__ == "__main__":
             # Refresh Frontier Leafs
             agent.refreshFrontierLeafs()
         
+        t2 = time.time()
+        t += t2 - t1
+
         try:
             # Extract outlinks of crawled page
             extractedURLS = agent.env.extractStateActions()     # list of Webpage
         except: 
             print("Exception CUDA extractStateActions")
             extractedURLS = []
+
+        t1 = time.time()
 
         # Store record to experience replay buffer
         record = (page.x, page.id, reward)
@@ -185,14 +216,22 @@ if __name__ == "__main__":
             history_path = f'{folder}{domain}_crawl_history_{machine}.pickle'
             with open(history_path, 'wb') as handle:
                 pickle.dump(history, handle)
+            handle.close()
 
         # Harvest Rate result for this timestep
         if VERBOSE and agent.env.crawler_sys.times_verbose % VERBOSE_PERIOD == 0:
-            print("Harvest Rate:", agent.env.harvestRate(), '\n')
+            print("Harvest Rate:", agent.env.harvestRate())
+            if CLASSIFICATION_METHOD == "SVM":
+                print("Harvest Rate RNN:", agent.env.rnn_relevant / agent.env.current_step, '\n')
+        print()
         agent.env.crawler_sys.times_verbose += 1
 
         # tf reset default graph    
         tf.compat.v1.reset_default_graph()
+
+        t2 = time.time()
+        t += t2 - t1
+        times.append(t)
 
     # Save (harvest_rates, rewards, crawled_pages (urls), batches, TUP, errors)
     history = (harvest_rates, rewards, crawled_pages, tree_leafs, tree_sizes, len(agent.env.different_domains))
@@ -207,4 +246,6 @@ if __name__ == "__main__":
     time_end = time.time()
     print("Crawling time:", (time_end - time_start) / 3600, "hours")
 
+    with open("times.pickle", 'wb') as handle:
+        pickle.dump(times, handle) 
 

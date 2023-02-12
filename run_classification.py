@@ -1,5 +1,5 @@
 from models.preprocess_folds import *
-from models.abcmodel import KwBiLSTM
+from models.abcmodel import KwBiLSTM, SVM
 from utils.hyperparameters import *
 from configuration.config import *
 
@@ -39,11 +39,13 @@ if __name__ == "__main__":
 
         if CLASSIFICATION_METHOD == "KwBiLSTM":
             model = KwBiLSTM(input_dim=300, maxseqlen=300, shortcut_dim1=SHORTCUT1, shortcut_dim2=3, output_dim=2, best_score=best_score)
-        
-        histories, best_report_fold = model.fit_ds(train_ds, val_ds, epochs=CLASSIFICATION_EPOCHS, batch_size=CLASSIFICATION_BATCH_SIZE)
+        elif CLASSIFICATION_METHOD == "SVM":
+            model = SVM(input_dim=300, maxseqlen=300, shortcut_dim1=SHORTCUT1, shortcut_dim2=3, best_score=best_score)
+
+        histories, best_report_fold = model.fit_ds(train_ds, val_ds)
         best_score = model.getBestScore()
         best_score_fold = model.getBestScoreFold()
-        best_scores_fold.append( best_score_fold )
+        best_scores_fold.append(best_score_fold)
         best_reports_fold.append(best_report_fold)
 
         gc.collect()

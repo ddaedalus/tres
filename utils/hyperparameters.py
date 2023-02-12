@@ -14,12 +14,14 @@ SHORTCUT2 = 3
 try:
     with open(f'{path}{domain}_SHORTCUT1.pickle', 'rb') as fp:
         SHORTCUT1 = pickle.load(fp) 
+    fp.close()
 except:
     SHORTCUT1 = None
 print(f"SHORTCUT1 = {SHORTCUT1}")
 
 # CLASSIFICATION
 CLASSIFICATION_METHOD = "KwBiLSTM" 
+CLASSIFICATION_METHOD = "SVM"
 MAX_LIMIT = 1800        # the maximum number of relevant samples in classification
 CLASSIFICATION_MODEL_SAVE = True
 
@@ -87,7 +89,9 @@ if POLICY == "random":
         CRAWLER_STR = "RandomCrawl"
 else:
     CRAWLER_STR = "TreeRLFC"
-machine = f"{CRAWLER_STR}_{TOTAL_TIME_STEPS}_SEEDS_1__MAX_{MAX_DOMAIN_PAGES}_{HUBS_STR}_{SUFFIX_STR}"
+
+adaptation_str = "adaptation" if ADAPTATION else ""
+machine = f"{CRAWLER_STR}_{TOTAL_TIME_STEPS}_SEEDS_1__MAX_{MAX_DOMAIN_PAGES}_{HUBS_STR}_{SUFFIX_STR}_{adaptation_str}"
 folder = f"./{domain}_{CRAWLER_STR}_{TOTAL_TIME_STEPS}_SEEDS_1_MAX_{MAX_DOMAIN_PAGES}_{HUBS_STR}/"
 Path(f"{folder}").mkdir(parents=True, exist_ok=True)            # create folder if it does not exist
 

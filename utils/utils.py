@@ -169,14 +169,15 @@ def array_to_max_mean(arr):
 
 
 def quantize(num, quantum_list=[0.00001,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]):
-    if num == 1.0: return 1.0
-    if num == 0.0: return 0.0
-    for i in range(len(quantum_list)):
-        try:
-            if num >= quantum_list[i] and num < quantum_list[i+1]:
-                return quantum_list[i]
-            else:
-                continue
-        except:
-            return quantum_list[i]
+    return num
+    # if num == 1.0: return 1.0
+    # if num == 0.0: return 0.0
+    # for i in range(len(quantum_list)):
+    #     try:
+    #         if num >= quantum_list[i] and num < quantum_list[i+1]:
+    #             return quantum_list[i]
+    #         else:
+    #             continue
+    #     except:
+    #         return quantum_list[i]
 

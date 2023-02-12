@@ -46,6 +46,7 @@ class TreeDDQNAgent(Agent):
         self.q_network = q_network
         self.target_q_network = target_q_network
         self.buffer = ReplayBuffer(batch_size=batch_size)
+        self.MAX_DOMAIN_PAGES = MAX_DOMAIN_PAGES
 
     def initialize(self):
         '''
@@ -199,7 +200,7 @@ class TreeDDQNAgent(Agent):
         except: self.env.domain_pages[domain] = 0
 
         # Check if this Webpage.url is already inside env.closure
-        if self.env.closure.seen(best_state_action.url) or self.env.domain_pages[domain] >= MAX_DOMAIN_PAGES:
+        if self.env.closure.seen(best_state_action.url) or self.env.domain_pages[domain] >= self.MAX_DOMAIN_PAGES:
             # Run policy again ...
             self.refreshFrontierLeafs()
             best_state_action = self.tree_policy(policy=POLICY, times=times+1)
@@ -270,7 +271,7 @@ class TreeDDQNAgent(Agent):
                 assert isinstance(w, Webpage)
                 domain = self.env.crawler_sys.getDomain(w.url)
                 try:
-                    to_delete = self.env.domain_pages[domain] >= MAX_DOMAIN_PAGES
+                    to_delete = self.env.domain_pages[domain] >= self.MAX_DOMAIN_PAGES
                 except:
                     to_delete = False
                 if to_delete or self.env.closure.seen(w.url):

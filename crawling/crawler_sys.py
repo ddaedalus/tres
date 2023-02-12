@@ -17,7 +17,7 @@ class CrawlerSys(URLextractor, HTMLParser, TextReprGenerator):
             clf:                ABCModel (X, X_shortcut1, X_shortcut2)
             keyword_filter:     KeywordFilter   
         '''
-        self.clf = clf
+        if not (type(clf) == list): clf = [clf]
         URLextractor.__init__(self)
         HTMLParser.__init__(self)
         TextReprGenerator.__init__(self, keyword_filter=keyword_filter)
@@ -35,6 +35,12 @@ class CrawlerSys(URLextractor, HTMLParser, TextReprGenerator):
         self.times_verbose = 0
         self.session_domains = {}       # dict[domain]=session
         self.session_domains_count = {}
+
+        if CLASSIFICATION_METHOD == "SVM":
+            self.clf = clf[1]
+            self.svm = clf[0]
+        else: self.clf = clf[0]
+        return
 
     def visit(self, url, content="body"):
         '''
@@ -283,7 +289,7 @@ class CrawlerSys(URLextractor, HTMLParser, TextReprGenerator):
             continue
         return seed_experiences, seed_webpages
 
-    def classify(self, doc, url=""):
+    def classify(self, doc, url="", method=""):
         '''
             Classify a given doc using self.clf
 
@@ -296,6 +302,9 @@ class CrawlerSys(URLextractor, HTMLParser, TextReprGenerator):
         '''
         emb, key1, key2 = self.create_instance_repr(doc, url)
         if emb[0,0,0] == -10: return 0.0
+        if method == "SVM":
+            label = self.svm(emb, key1, key2)[0]
+            return 1 - label  # relevant has label = 0 
         prob = self.clf(emb, key1, key2)[0][0]
         return prob
 
@@ -310,7 +319,7 @@ if __name__ == "__main__":
     keyword_filter = KeywordFilter(taxonomy_keywords=sports_taxonomy, new_keywords=new_keywords,
                                    taxonomy_phrases=sports_phrases)
     path_model = ""
-    clf = KwBiLSTM(path=path_model, shortcut_dim1=42, shortcut_dim2=3)
+    clf = KwBiLSTM(path=path_model, shortcut_dim1=SHORTCUT1, shortcut_dim2=3)
     clf.load_model(f"model")
     # clf = None
     sys = CrawlerSys(keyword_filter=keyword_filter, clf=clf)

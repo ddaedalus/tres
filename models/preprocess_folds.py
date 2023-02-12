@@ -33,6 +33,7 @@ t1 = time.time()
 for i,domain in enumerate(domains): 
     with open(path + f'{domain}.pickle', 'rb') as fp:
         d = pickle.load(fp) 
+    fp.close()
     print(f"len {domain}: {len(d)}")
     keys = list(d.keys())[:MAX_LIMIT]
     values = list(d.values())[:MAX_LIMIT]
@@ -47,6 +48,7 @@ print(f"{t2-t2} secs")
 try:
     with open(path + 'seeds_dict_bodies_' + domain + '.pickle', 'rb') as handle:
         d = pickle.load(handle)
+    handle.close()
 except:
     d = {}
 
@@ -71,7 +73,7 @@ print(len(X))
 print(len(y))
 print()
 
-folds = 5
+folds = FOLDS
 train_folds = [None]*folds
 val_folds = [None]*folds
 
@@ -209,8 +211,4 @@ def map_batch_get_data(batch):
         return list(map(lambda x:x[4], batch))
     return get_X(), get_X_keyword_bins(), get_X_keyword_found(), get_y(), getURLs()
     
-
-
-
-
 

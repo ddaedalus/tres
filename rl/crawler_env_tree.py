@@ -78,10 +78,14 @@ class TreeCrawlerEnv(gym.Env):
         self.closure = Closure()                        # The Crawl Closure
         self.domain_pages = {}                          # dict[domain] = num_of_pages_fetched_from_this_domain
         self.different_domains = {}                     # dict[domain] = 1 if at least one relevant page is found
-        self.fetch_history = {}                         # dict["url"]=list of Webpage )  
+        self.fetch_history = {}                         # dict["url"]=list of Webpage
+        self.MAX_DOMAIN_PAGES = MAX_DOMAIN_PAGES
 
         # Metric variables
         self.relevant = 0                               # number of relevant urls fetched
+        if CLASSIFICATION_METHOD == "SVM":
+            self.rnn_relevant = 0
+
         return
 
     @timeout(10)
@@ -138,6 +142,7 @@ class TreeCrawlerEnv(gym.Env):
             t4 = time.time()
 
         except:
+            print("Exception in env.step")
             # Catch timeout exception
             self.state_webpage = False
             reward = None
@@ -186,17 +191,35 @@ class TreeCrawlerEnv(gym.Env):
             - 0.0 for Irrelevant
         '''
         state_url = self.state_webpage.url
-        y_body = self.crawler_sys.classify(self.state_body, state_url) 
         domain = self.crawler_sys.getDomain(state_url)
-        if y_body >= 0.5:
-            self.relevant += 1
-            self.last_reward = 1.0
-            if HUB_FEATURES and POLICY != "random":
-                self.crawler_sys.domain_relevance[domain][1] += 1
-            # Store relevant domain
-            self.different_domains[domain] = 1
+
+        if CLASSIFICATION_METHOD == "SVM":
+            label = self.crawler_sys.classify(self.state_body, state_url, "SVM")
+            y_body_rnn = self.crawler_sys.classify(self.state_body, state_url)
+            if label == 1:
+                self.relevant += 1
+                self.last_reward = 1.0
+                if HUB_FEATURES and POLICY != "random":
+                    self.crawler_sys.domain_relevance[domain][1] += 1
+            else:
+                self.last_reward = 0.0
+
+            if y_body_rnn >= 0.5:
+                self.rnn_relevant += 1
+                # Store relevant domain
+                self.different_domains[domain] = 1
+
         else:
-            self.last_reward = 0.0
+            y_body = self.crawler_sys.classify(self.state_body, state_url) 
+            if y_body >= 0.5:
+                self.relevant += 1
+                self.last_reward = 1.0
+                if HUB_FEATURES and POLICY != "random":
+                    self.crawler_sys.domain_relevance[domain][1] += 1
+                # Store relevant domain
+                self.different_domains[domain] = 1
+            else:
+                self.last_reward = 0.0
 
         # HUB_FEATURES = True
         if HUB_FEATURES and POLICY != "random":
@@ -231,7 +254,7 @@ class TreeCrawlerEnv(gym.Env):
             domain = self.getDomain(page.url)
             try: self.domain_pages[domain]
             except: self.domain_pages[domain] = 0
-            if self.closure.seen(page.url) or self.domain_pages[domain] >= MAX_DOMAIN_PAGES:  
+            if self.closure.seen(page.url) or self.domain_pages[domain] >= self.MAX_DOMAIN_PAGES:  
                 # Closure has seen before this URL
                 continue
             self.has_extracted_counter += 1

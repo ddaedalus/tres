@@ -7,8 +7,7 @@ import numpy as np
 from tensorflow.keras.layers import Input, Dense, LSTM, Layer, Bidirectional, Masking, Dropout, GlobalAveragePooling1D
 from tensorflow.keras.optimizers import Adam, SGD, RMSprop
 from tensorflow.keras.losses import sparse_categorical_crossentropy
-from sklearn.metrics import classification_report, accuracy_score, f1_score, matthews_corrcoef as mcc
-from sklearn.svm import SVC
+from sklearn.metrics import classification_report, f1_score, matthews_corrcoef as mcc
 from keras.models import load_model
 from keras.layers.merge import concatenate
 from tensorflow.keras.models import Model
@@ -215,7 +214,6 @@ class KwBiLSTM(ABCModel):
         '''
             Return the softmax probabilities
         '''
-        # print(self.shortcut_dim1)
         return self.model.predict([X, X_shortcut1, X_shortcut2], batch_size=batch_size)
 
     @staticmethod
@@ -377,194 +375,8 @@ class KwBiLSTM(ABCModel):
         return
 
     def load_model(self, path="model"):
-        self.model = load_model(self.path, compile=False)
+        self.model = load_model(self.path + path, compile=False)
         return
-
-
-class SVM(ABCModel):
-
-    def __init__(self, maxseqlen=MAXSEQLEN, input_dim=300, 
-                 shortcut_dim1=SHORTCUT1, shortcut_dim2=SHORTCUT2, path="", 
-                 best_score=0.0, save=CLASSIFICATION_MODEL_SAVE):
-        '''
-            input_dim:          int, size of features of the input of LSTM
-            maxseqlen:          int, size of timesteps of the input of LSTM
-            best_score:         float, for saving the model with a score >= best_score
-            save:               bool
-        '''
-        ABCModel.__init__(self)
-        self.best_score = best_score
-        self.best_score_fold = 0
-        self.path = path
-        self.setPathID()    # self.path_id
-        self.input_dim = input_dim
-        self.shortcut_dim1 = shortcut_dim1
-        self.shortcut_dim2 = shortcut_dim2
-        self.maxseqlen = maxseqlen
-        self.save = save
-
-        # SVM model
-        self.model = SVC(kernel="poly")
-        return
-
-    def getBestScore(self):
-        return self.best_score
-
-    def getBestScoreFold(self):
-        return self.best_score_fold
-
-    def setPathID(self):
-        self.path = f"./SVM/svm_{domain}.pickle"
-        return 
-
-    def score_ds(self, test_ds, report=True):
-        '''
-            Classification Report and Scoring metrics on test dataset
-
-            Params:
-            - test_ds:      tf.data.Dataset
-        '''        
-        m_batch = map_batch(test_ds, oversampling=False)   # embedding, keyword, label, url
-        X, X_shortcut1, X_shortcut2, y, urls = map_batch_get_data(m_batch)
-        y_true = np.reshape(y, (-1,1))
-        y_predict = self.predict(X, X_shortcut1, X_shortcut2)
-
-        if report:
-            class_report = classification_report(y_true, y_predict)
-            print(class_report)
-        else: class_report = None
-
-        # Matthews correlation coefficient             
-        mcc_score = mcc(y_true, y_predict) 
-
-        report = classification_report(y_true, y_predict, output_dict=True)
-        f1_score = report["0"]["f1-score"]          # only for relevant class -> "0"
-        prec_positive = report["0"]["precision"]
-        rec_positive = report["0"]["recall"]
-        prec_negative = report["1"]["precision"]
-        rec_negative = report["1"]["recall"]
-        y_true_one_d = np.reshape(y_true, (-1,))
-
-        # Confusion matrix metrics
-        tp = rec_positive * len(y_true_one_d[y_true_one_d==0])
-        tn = rec_negative * len(y_true_one_d[y_true_one_d==1])
-        try: fp = (tp / prec_positive) - tp
-        except: fp = 0
-        try: fn = (tp / rec_positive) - tp
-        except: fn = 0
-
-        # FPR (fall-out), TPR (recall)
-        try: fpr = fp / (fp + tn)
-        except: fpr = 0 
-        tnr = 1 - fpr
-        tpr = rec_positive
-
-        # Balanced Accuracy (BA)
-        ba = (tpr + tnr) / 2
-
-        print(f"MCC:            {str(mcc_score)[0:5]}\t tp: {tp}")
-        print(f"TPR (Recall):   {str(tpr)[0:5]}\t fp: {fp}")
-        print(f"FPR (fall-out): {str(fpr)[0:5]}\t tn: {tn}")
-        print(f"BA:             {str(ba)[0:5]}\t fn: {fn}")
-        return mcc_score, tpr, fpr, ba, class_report
-
-    def __call__(self, X, X_shortcut1, X_shortcut2, batch_size=None):
-        '''
-            Return the predicted label
-        '''
-        X = np.mean(X, axis=1)
-        X = np.concatenate((X, X_shortcut1, X_shortcut2), axis=1)        
-        return self.model.predict(X)
-
-    @staticmethod
-    def sqrt_class_weight(class_weight):
-        '''
-            class_weight:   dict
-        '''
-        for key in list(class_weight.keys()):
-            class_weight[key] = math.sqrt( class_weight[key] )
-        return class_weight
-
-    def fit(self, X_train, X_shortcut1, X_shortcut2, y_train):
-        '''
-            Training the model
-        '''
-        X_train = np.mean(X_train, axis=1)
-        X_train = np.concatenate((X_train, X_shortcut1, X_shortcut2), axis=1)
-        y_train = np.reshape(y_train, (-1,1))
-        self.model.fit(X_train, y_train)
-        y_predict = self.model.predict(X_train)
-        train_accuracy = accuracy_score(y_predict, y_train)
-        return train_accuracy
-        
-    def fit_ds(self, train_ds, val_ds, class_weight=None, class_weight_method="sqrt"):
-        '''
-            Training the model
-
-            Params:
-            - train_ds:     list
-            - val_ds:       list
-
-            Returns:
-            - histories:    dict["metric"] = list [metric value]
-        '''
-        histories = {
-            "train_acc": 0,
-            "val_acc": 0
-        }   # dict["metric"] = [ metric value ] 
-        history_train_loss = [ 0 ]
-        history_train_acc = [ 0 ] 
-        history_val_loss = [ 0 ]
-        history_val_acc = [ 0 ] 
-        best_report = None
-        self.best_score_fold = 0
-        t1 = time.time()
-        m_batch = map_batch(train_ds)   # embedding, keyword, label, url
-        X_train, X_shortcut1, X_shortcut2, y, urls = map_batch_get_data(m_batch)
-        train_accuracy = self.fit(X_train, X_shortcut1, X_shortcut2, y)
-
-        del X_train
-        del X_shortcut1
-        del X_shortcut2
-        del y
-        gc.collect()
-
-        # Train/Validation metrics
-        print(f"train_acc: {train_accuracy}")
-        mcc_score, tpr, fpr, ba, report = self.score_ds(val_ds)
-
-        if self.best_score_fold < mcc_score:
-            best_report = report
-            self.best_score_fold = mcc_score
-
-        # Save model
-        if mcc_score > self.best_score:
-            self.best_score = mcc_score
-            if self.save:
-                self.save_model()
-                print("Model saved.")
-        print()  
-            
-        # Return histories
-        histories["train_acc"] = train_accuracy
-        return histories, best_report
-
-    def predict(self, X_test, X_shortcut1, X_shortcut2):
-        '''
-            Predict on X_test
-        '''
-        X_test = np.mean(X_test, axis=1)
-        X_test = np.concatenate((X_test, X_shortcut1, X_shortcut2), axis=1)
-        return self.model.predict(X_test)     
-
-    def save_model(self):
-        pickle.dump(self.model, open(self.path, 'wb'))
-        return
-
-    def load_model(self):
-        self.model = pickle.load(open(self.path, 'rb'))
-        return
-
 
 
 

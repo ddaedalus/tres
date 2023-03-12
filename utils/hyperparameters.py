@@ -20,8 +20,7 @@ except:
 print(f"SHORTCUT1 = {SHORTCUT1}")
 
 # CLASSIFICATION
-CLASSIFICATION_METHOD = "KwBiLSTM" 
-CLASSIFICATION_METHOD = "SVM"
+CLASSIFICATION_METHOD = "KwBiLSTM" # or "SVM"
 MAX_LIMIT = 1800        # the maximum number of relevant samples in classification
 CLASSIFICATION_MODEL_SAVE = True
 

@@ -10,10 +10,10 @@ Also, link to paper ([preprint](https://arxiv.org/abs/2112.07620)).
 
 ---
 
-## Results
+### Results
 ![Results_of_Hardware](images/Results_of_Hardware.png)
 
-## Run locally
+### Run locally
 
 1. Git clone the repo.
 
@@ -51,7 +51,7 @@ python3 run_crawling.py
 
 ---
 
-## Citation
+### Citation
 
 If you find this work helpful in your research, cite:
 ```

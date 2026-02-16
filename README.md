@@ -55,11 +55,10 @@ python3 run_crawling.py
 
 If you find this work helpful in your research, cite:
 ```
-@article{Kontogiannis2021TreebasedFW,
-  title={Tree-based Focused Web Crawling with Reinforcement Learning},
-  author={A. Kontogiannis and Dimitrios Kelesis and Vasilis Pollatos and Georgios Paliouras and George Giannakopoulos},
-  journal={ArXiv},
-  year={2021},
-  volume={abs/2112.07620}
+@article{kontogiannis2021tree,
+  title={Tree-based focused web crawling with reinforcement learning},
+  author={Kontogiannis, Andreas and Kelesis, Dimitrios and Pollatos, Vasilis and Paliouras, Georgios and Giannakopoulos, George},
+  journal={arXiv preprint arXiv:2112.07620},
+  year={2021}
 }
 ```
